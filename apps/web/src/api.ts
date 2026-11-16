@@ -1,3 +1,4 @@
+import { getSessionId } from "./session";
 import type { DetectionResult } from "./types";
 
 export async function detectImage(blob: Blob): Promise<DetectionResult> {
@@ -7,6 +8,9 @@ export async function detectImage(blob: Blob): Promise<DetectionResult> {
   const res = await fetch("/api/detect", {
     method: "POST",
     body: form,
+    headers: {
+      "X-Session-Id": getSessionId(),
+    },
   });
 
   if (!res.ok) {

@@ -5,6 +5,9 @@ import type { DetectionResult } from "./types";
 
 type SourceMode = "idle" | "file" | "camera";
 
+const TARGET_FPS = 8;
+const LOOP_MS = Math.round(1000 / TARGET_FPS);
+
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,6 +19,9 @@ export default function App() {
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [roundTripMs, setRoundTripMs] = useState<number | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
+  const [liveDetect, setLiveDetect] = useState(true);
+  const [clientFps, setClientFps] = useState(0);
+  const sentTimesRef = useRef<number[]>([]);
 
   const renderFrame = useCallback(
     (bitmap: CanvasImageSource, width: number, height: number) => {
@@ -54,6 +60,13 @@ export default function App() {
         setResult(data);
         applyResult(data);
         setRoundTripMs(performance.now() - t0);
+        const now = performance.now();
+        const samples = [...sentTimesRef.current, now].filter((t) => now - t < 2000);
+        sentTimesRef.current = samples;
+        if (samples.length > 1) {
+          const span = (samples[samples.length - 1] - samples[0]) / 1000;
+          setClientFps(span > 0 ? (samples.length - 1) / span : 0);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Detection failed");
       } finally {
@@ -68,6 +81,7 @@ export default function App() {
     setMode("file");
     setCameraOn(false);
     stopCamera();
+    setLiveDetect(false);
 
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -83,12 +97,14 @@ export default function App() {
     img.src = url;
   };
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setCameraOn(false);
-  };
+    sentTimesRef.current = [];
+    setClientFps(0);
+  }, []);
 
   const captureAndDetect = useCallback(async () => {
     const video = videoRef.current;
