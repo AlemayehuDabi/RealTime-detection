@@ -139,6 +139,7 @@ export default function App() {
         await videoRef.current.play();
       }
       setCameraOn(true);
+      setLiveDetect(true);
     } catch {
       setError(
         "Camera permission denied or no camera found. Use file upload instead.",
@@ -147,7 +148,15 @@ export default function App() {
     }
   };
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => () => stopCamera(), [stopCamera]);
+
+  useEffect(() => {
+    if (!cameraOn || !liveDetect) return;
+    const id = window.setInterval(() => {
+      void captureAndDetect();
+    }, LOOP_MS);
+    return () => window.clearInterval(id);
+  }, [cameraOn, liveDetect, captureAndDetect]);
 
   return (
     <main className="app">
@@ -172,8 +181,15 @@ export default function App() {
           </button>
         ) : (
           <>
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={() => setLiveDetect((v) => !v)}
+            >
+              {liveDetect ? `Live ${TARGET_FPS} FPS (on)` : "Live detect (off)"}
+            </button>
             <button type="button" className="btn" onClick={captureAndDetect}>
-              Detect frame
+              Detect once
             </button>
             <button type="button" className="btn secondary" onClick={stopCamera}>
               Stop camera
@@ -206,6 +222,10 @@ export default function App() {
         <div>
           <span className="label">Round-trip</span>
           <span>{roundTripMs != null ? `${roundTripMs.toFixed(0)} ms` : "—"}</span>
+        </div>
+        <div>
+          <span className="label">Client FPS</span>
+          <span>{clientFps > 0 ? clientFps.toFixed(1) : "—"}</span>
         </div>
         <div>
           <span className="label">Detections</span>

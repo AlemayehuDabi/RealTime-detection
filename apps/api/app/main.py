@@ -2,7 +2,9 @@ import logging
 import time
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import get_cors_origin_list, get_detector_mode
 from app.detector import get_detector
 from app.image_io import ImageDecodeError, decode_and_prepare
 from app.logging_utils import setup_logging
@@ -13,14 +15,19 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="RealTime Detection API", version="0.1.0")
 app.add_middleware(RequestContextMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_cors_origin_list(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    from app.config import get_detector_mode
-
     return {"status": "ok", "detector": get_detector_mode()}
 
 
