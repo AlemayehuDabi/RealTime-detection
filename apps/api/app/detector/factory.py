@@ -8,7 +8,11 @@ from app.detector.mock import MockDetector
 @lru_cache
 def get_detector() -> Detector:
     mode = get_detector_mode()
-    if mode != "mock":
-        msg = f"Detector {mode!r} is not available yet; use DETECTOR=mock"
-        raise RuntimeError(msg)
-    return MockDetector()
+    if mode == "mock":
+        return MockDetector()
+    if mode == "onnx":
+        from app.detector.onnx_detector import OnnxDetector
+
+        return OnnxDetector()
+    msg = f"Unknown DETECTOR mode: {mode}"
+    raise RuntimeError(msg)

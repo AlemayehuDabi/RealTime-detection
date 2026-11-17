@@ -15,6 +15,9 @@ dist/
 # Models and weights (local only)
 models/*
 !models/.gitkeep
+!models/source/
+models/source/*
+!models/source/.gitkeep
 *.pt
 *.onnx
 
