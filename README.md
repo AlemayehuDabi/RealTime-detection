@@ -13,10 +13,13 @@ Browser-based real-time object detection (YOLO on COCO classes). The **web app a
 
 ### API
 
+Use **Python 3.11–3.14**. On **3.14**, pinned versions use prebuilt wheels for Pillow and Pydantic (older pins tried to compile from source and failed without `libjpeg` / Rust).
+
 ```bash
 cd apps/api
 python3 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env   # optional; defaults to DETECTOR=mock
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
